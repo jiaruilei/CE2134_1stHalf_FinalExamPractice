@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CE2134 Final Exam Aid — 10‑Question Game</title>
+<style>
+  :root{
+    --bg:#0f172a;          /* slate-900 */
+    --card:#111827;        /* gray-900 */
+    --ink:#e5e7eb;         /* gray-200 */
+    --ink-dim:#9ca3af;     /* gray-400 */
+    --accent:#22c55e;      /* green-500 */
+    --accent-2:#60a5fa;    /* blue-400 */
+    --wrong:#ef4444;       /* red-500 */
+    --muted:#374151;       /* gray-700 */
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 10% -20%, #1f2937 0, #0f172a 55%) no-repeat fixed, var(--bg);
+    color:var(--ink); line-height:1.45;
+    padding:32px 20px 60px;
+  }
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:clamp(24px,3vw,36px);margin:0 0 8px}
+  .sub{color:var(--ink-dim);margin:0 0 24px}
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border:1px solid #1f2937; border-radius:16px; padding:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.35);
+  }
+  .meta{display:flex;gap:12px;flex-wrap:wrap;margin:6px 0 18px}
+  .tag{background:#0b1220;border:1px solid #1e293b;color:#cbd5e1;padding:4px 10px;border-radius:999px;font-size:12px}
+  .progress{
+    height:10px;background:#0b1220;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin:6px 0 18px
+  }
+  .bar{height:100%;width:0;background:linear-gradient(90deg, var(--accent), var(--accent-2))}
+  .q-section{color:#a7f3d0;font-weight:600;letter-spacing:.2px}
+  .q-stem{font-size:clamp(18px,2.2vw,22px);margin:8px 0 12px}
+  .q-units{color:var(--ink-dim);font-size:14px;margin-top:-6px}
+  .choices{display:grid;gap:10px;margin:12px 0}
+  .choice{
+    display:flex;gap:10px;align-items:flex-start;
+    background:#0b1220;border:1px solid #1f2937;border-radius:12px;padding:10px 12px; cursor:pointer;
+  }
+  .choice input{margin-top:2px}
+  input[type="number"], input[type="text"]{
+    width:100%; background:#0b1220; color:var(--ink);
+    border:1px solid #1f2937; border-radius:10px; padding:10px 12px; font-size:16px;
+  }
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  button{
+    border:1px solid #1f2937; background:#172554; color:#dbeafe;
+    padding:10px 14px;border-radius:12px;font-weight:600; cursor:pointer
+  }
+  button.primary{background:linear-gradient(180deg,#2563eb,#1e40af); color:white}
+  button.ghost{background:#0b1220;color:#cbd5e1}
+  .feedback{margin-top:12px; font-weight:700}
+  .ok{color:var(--accent)}
+  .no{color:var(--wrong)}
+  .explain{
+    margin-top:8px; padding:10px 12px; border:1px dashed #334155; border-radius:12px;
+    color:#cbd5e1; background:#0a1120;
+  }
+  .score{
+    display:flex;gap:10px;align-items:center;margin:18px 0 0
+  }
+  .score span{padding:6px 10px;border-radius:999px;background:#0b1220;border:1px solid #1f2937}
+  .small{font-size:12px;color:var(--ink-dim)}
+  .foot{color:var(--ink-dim);font-size:13px;margin-top:22px}
+  .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;background:#0b1220;border:1px solid #1f2937;padding:0 6px;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>CE2134 Final Exam Aid — 10‑Question Game</h1>
+  <p class="sub">One question per topic (Fluid Props → Dimensional Analysis).</p>
+
+  <div class="card">
+    <div class="meta">
+      <span class="tag">Questions: <strong id="qCount">10</strong></span>
+      <span class="tag">Score: <strong id="score">0</strong></span>
+      <span class="tag">Question <strong id="qIndex">1</strong> / <span id="qTotal">10</span></span>
+    </div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+
+    <div id="qContainer">
+      <!-- Question content injected here -->
+    </div>
+
+    <div class="controls">
+      <button class="ghost" id="hintBtn" aria-label="Show hint (if available)">💡 Hint</button>
+      <button id="checkBtn" class="primary">Check Answer</button>
+      <button id="nextBtn" class="ghost" disabled>Next ▶</button>
+      <button id="restartBtn" class="ghost" style="margin-left:auto">↻ Restart</button>
+    </div>
+
+    <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+    <div id="explain" class="explain" hidden></div>
+
+    <div class="score"><span id="final" hidden></span></div>
+
+    <p class="foot">
+      Equations can be found in the <em>CE2134 Final Exam Aid</em> (see Eq. (1)–(14)). 
+    </p>
+  </div>
+
+  <p class="foot small">
+    Tip: For numeric questions, you can type scientific notation (e.g., <span class="kbd">1.95e1</span> for 19.5). Tolerances are shown in the explanations.
+  </p>
+</div>
+
+<script>
+  // Constants used across several questions
+  const G = 9.81;                 // m/s^2
+  const RHO_WATER = 1000;         // kg/m^3
+  const GAMMA_WATER = RHO_WATER * G; // N/m^3
+
+  // Helper: to fixed without stripping integer look
+  const fmt = (x, digits=2) => Number.isFinite(x) ? (+x).toFixed(digits) : x;
+
+  // The 10 questions — one per section (1 → 10)
+  // Each item: { section, type, prompt, units, choices?, answer, tol, hint, explain }
+  const QUESTIONS = [
+    // 1. Fluid Properties
+    {
+      section: "1 · Fluid Properties",
+      type: "numeric",
+      prompt: "An oil has a specific gravity S = 0.80. What is its density, in kg/m³?",
+      units: "kg/m³",
+      answer: 0.80 * RHO_WATER,  // 800
+      tol: 1, // ±1 kg/m^3
+      hint: "S = ρ_fluid / ρ_water ⇒ ρ_fluid = S × ρ_water.",
+      explain: "From Section 1: Specific gravity is S = ρ_fluid / ρ_water. With ρ_water ≈ 1000 kg/m³, ρ_fluid = 0.80 × 1000 = 800 kg/m³. (Sec. 1)"
+    },
+
+    // 2. Pressure
+    {
+      section: "2 · Pressure",
+      type: "mcq",
+      prompt: "Which statement about pressure in a static fluid is correct?",
+      choices: [
+        {label: "Pressure at a point is isotropic (same in all directions).", correct: true},
+        {label: "The pressure force acts tangentially along any surface."},
+        {label: "Pressure at a point depends on the shape of the container."},
+        {label: "Pressure in a vacuum is always equal to atmospheric pressure."}
+      ],
+      answer: "Pressure at a point is isotropic (same in all directions).",
+      hint: "Two key bullet points appear under Section 2.",
+      explain: "Section 2 states: (i) Pressure is isotropic; (ii) Pressure force is always perpendicular to the surface. So the first statement is the correct one. (Sec. 2)"
+    },
+
+    // 3. Hydrostatics
+    {
+      section: "3 · Hydrostatics",
+      type: "numeric",
+      prompt: "Fresh water: what pressure difference Δp (in kPa) corresponds to a vertical separation Δh = 5 m?",
+      units: "kPa",
+      answer: (RHO_WATER * G * 5)/1000, // 49.05
+      tol: 0.5,
+      hint: "Use Δp = ρ g Δh (Eq. (1)).",
+      explain: "From Eq. (1): Δp = ρ g Δh = 1000 × 9.81 × 5 = 49050 Pa = 49.05 kPa. (Sec. 3, Eq. (1))"
+    },
+
+    // 4. Hydrostatic Forces (plane)
+    {
+      section: "4 · Hydrostatic Forces (Plane Surfaces)",
+      type: "numeric",
+      prompt: "A vertical rectangular gate is 2 m wide and 3 m high with its top at the free surface. Find the resultant hydrostatic force F on the gate (in kN).",
+      units: "kN",
+      answer: (GAMMA_WATER * (1.5) * (2*3))/1000, // 88.29
+      tol: 0.5,
+      hint: "Use F = γ h̄ A with h̄ at the centroid.",
+      explain: "Use Eq. (2): F = γ h̄ A. Here A=6 m² and centroid depth h̄=1.5 m. Thus F = (ρg) h̄ A = 9810 × 1.5 × 6 = 88290 N ≈ 88.29 kN. (Sec. 4, Eq. (2); center of pressure is given by Eq. (3). Appendix Figure A.1 lists centroid/inertia data.)"
+    },
+
+    // 5. Buoyancy
+    {
+      section: "5 · Buoyancy",
+      type: "numeric",
+      prompt: "A solid block of volume 0.50 m³ is fully submerged in fresh water. What is the buoyant force (in kN)?",
+      units: "kN",
+      answer: (RHO_WATER * G * 0.50)/1000, // 4.905
+      tol: 0.05,
+      hint: "Buoyant force equals the weight of displaced fluid.",
+      explain: "From Eq. (4): F_b = ρ g V_displaced = 1000 × 9.81 × 0.50 = 4905 N = 4.905 kN. (Sec. 5, Eq. (4))"
+    },
+
+    // 6. Bernoulli Equation
+    {
+      section: "6 · Bernoulli Equation",
+      type: "numeric",
+      prompt: "In a horizontal, inviscid pipe: p₁ = 200 kPa, v₁ = 2 m/s. Downstream the speed is v₂ = 5 m/s. Find p₂ (in kPa).",
+      units: "kPa",
+      answer: (200e3 + 0.5*RHO_WATER*(2*2 - 5*5))/1000, // 189.5
+      tol: 0.5,
+      hint: "For equal elevations, p₁ + ½ρv₁² = p₂ + ½ρv₂².",
+      explain: "Eq. (5) along a streamline and horizontal line: p₁ + ½ρv₁² = p₂ + ½ρv₂² ⇒ p₂ = 200 kPa − ½ρ(v₂² − v₁²) = 200 − 10.5 = 189.5 kPa. (Sec. 6, Eq. (5))"
+    },
+
+    // 7. Conservation of Mass
+    {
+      section: "7 · Conservation of Mass",
+      type: "numeric",
+      prompt: "Steady incompressible flow: a pipe contracts from D₁ = 0.20 m to D₂ = 0.10 m. If v₁ = 1.0 m/s, find v₂ (in m/s).",
+      units: "m/s",
+      answer: 4.0,
+      tol: 0.01,
+      hint: "Continuity: Q = V A = constant ⇒ v₂ = v₁(A₁/A₂).",
+      explain: "From Eq. (6): Q = V A. For steady incompressible flow, V₁A₁ = V₂A₂ ⇒ v₂ = v₁ (D₁²/D₂²) = 1 × (0.20² / 0.10²) = 4 m/s. (Sec. 7, Eq. (6); steady mass flow Eq. (8))"
+    },
+
+    // 8. Conservation of Momentum
+    {
+      section: "8 · Conservation of Momentum",
+      type: "numeric",
+      prompt: "A steady water jet (ṁ = 10 kg/s) turns 90° in a smooth vane with no speed change (|v| = 5 m/s). Find the magnitude of the resultant force on the vane (in N).",
+      units: "N",
+      answer: Math.sqrt( (10*5)**2 + (10*5)**2 ), // 70.7107...
+      tol: 0.6,
+      hint: "ΣF = Σ(ṁ v)_out − Σ(ṁ v)_in (vector). Turning +x to +y.",
+      explain: "Eq. (10): ΣF = ṁ(v_out − v_in). With v_in = (5,0), v_out = (0,5) m/s and ṁ = 10 kg/s, components are (−50, +50) N on the fluid; the reaction on the vane has magnitude √(50²+50²) ≈ 70.71 N. (Sec. 8, Eq. (10))"
+    },
+
+    // 9. Conservation of Energy (head form)
+    {
+      section: "9 · Conservation of Energy (Head Form)",
+      type: "numeric",
+      prompt: "Same diameters (so v₁ = v₂). Pump adds h_p = 15 m, elevation rises z₂ − z₁ = 10 m, and head loss h_L = 3 m. With p₁ (gauge) = 0, find p₂ in kPa.",
+      units: "kPa",
+      answer: (2 * RHO_WATER * G)/1000, // 19.62 kPa
+      tol: 0.5,
+      hint: "hp + (v₁²/2g + z₁ + p₁/ρg) = (v₂²/2g + z₂ + p₂/ρg) + hL.",
+      explain: "Eq. (11): p₂/ρg = h_p − (z₂ − z₁) − h_L = 15 − 10 − 3 = 2 m ⇒ p₂ = ρ g (2 m) = 19.62 kPa. (Sec. 9, Eq. (11))"
+    },
+
+    // 10. Dimensional Analysis
+    {
+      section: "10 · Dimensional Analysis (Reynolds Similarity)",
+      type: "numeric",
+      prompt: "Water model in same fluid: L_m = 0.50 m, L_p = 5.0 m. To match Reynolds number (Re_m = Re_p), if U_m = 1.2 m/s, what speed U_p (m/s) should the prototype use?",
+      units: "m/s",
+      answer: 1.2 * (0.50/5.0), // 0.12
+      tol: 0.01,
+      hint: "Re = ρUL/μ. With same fluid, U_p = U_m (L_m/L_p).",
+      explain: "From Eq. (14): Re = ρ U L / μ. With identical ρ, μ: U_p/U_m = L_m/L_p ⇒ U_p = 1.2 × 0.5/5 = 0.12 m/s. (Sec. 10, Eq. (14))"
+    }
+  ];
+
+  // --- State ---
+  let idx = 0;
+  let score = 0;
+  let checked = false;
+
+  const qTotal = QUESTIONS.length;
+  document.getElementById('qTotal').textContent = qTotal;
+
+  // --- DOM shortcuts ---
+  const qContainer = document.getElementById('qContainer');
+  const feedbackEl = document.getElementById('feedback');
+  const explainEl = document.getElementById('explain');
+  const hintBtn = document.getElementById('hintBtn');
+  const checkBtn = document.getElementById('checkBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const scoreEl = document.getElementById('score');
+  const qIndexEl = document.getElementById('qIndex');
+  const bar = document.getElementById('bar');
+  const finalEl = document.getElementById('final');
+
+  function renderQuestion(){
+    const q = QUESTIONS[idx];
+    feedbackEl.textContent = "";
+    explainEl.hidden = true;
+    explainEl.textContent = "";
+    nextBtn.disabled = true;
+    checked = false;
+
+    qIndexEl.textContent = (idx + 1);
+    bar.style.width = `${(idx)/qTotal*100}%`;
+
+    let html = `
+      <div class="q-section">${q.section}</div>
+      <div class="q-stem">${q.prompt}</div>
+      ${q.units ? `<div class="q-units">Units: <strong>${q.units}</strong></div>` : "" }
+    `;
+
+    if(q.type === "mcq"){
+      html += `<div class="choices" role="radiogroup" aria-label="Choices">`;
+      // randomize display order
+      const shuffled = [...q.choices].map((c,i)=>({...c,_i:i}))
+        .sort(()=>Math.random()-0.5);
+      html += shuffled.map((choice,i) => `
+        <label class="choice">
+          <input type="radio" name="opt" value="${choice.label}">
+          <span>${choice.label}</span>
+        </label>
+      `).join("");
+      html += `</div>`;
+    } else if(q.type === "numeric"){
+      html += `
+        <div>
+          <input id="num" type="number" placeholder="Enter your answer" inputmode="decimal" step="any" />
+        </div>
+        <div class="small" style="margin-top:6px">Accepted tolerance: ±${q.tol} ${q.units || ""}</div>
+      `;
+    }
+
+    qContainer.innerHTML = html;
+  }
+
+  function getUserAnswer(){
+    const q = QUESTIONS[idx];
+    if(q.type === "mcq"){
+      const chosen = qContainer.querySelector('input[name="opt"]:checked');
+      return chosen ? chosen.value : null;
+    } else {
+      const val = qContainer.querySelector('#num')?.value.trim();
+      if(val === "" || isNaN(Number(val))) return null;
+      return Number(val);
+    }
+  }
+
+  function isCorrect(user){
+    const q = QUESTIONS[idx];
+    if(q.type === "mcq"){
+      return user === q.answer;
+    } else {
+      const diff = Math.abs(user - q.answer);
+      return diff <= q.tol;
+    }
+  }
+
+  function showExplanation(){
+    const q = QUESTIONS[idx];
+    explainEl.hidden = false;
+    explainEl.textContent = q.explain + (q.units ? ` Expected ≈ ${fmt(q.answer, 3)} ${q.units}.` : ``);
+  }
+
+  checkBtn.addEventListener('click', () => {
+    if(checked) return;
+    const ans = getUserAnswer();
+    if(ans === null){
+      feedbackEl.innerHTML = `<span class="no">Please enter/select an answer.</span>`;
+      return;
+    }
+    const correct = isCorrect(ans);
+    if(correct){
+      score += 1;
+      scoreEl.textContent = score;
+      feedbackEl.innerHTML = `<span class="ok">✅ Correct!</span>`;
+    } else {
+      feedbackEl.innerHTML = `<span class="no">❌ Not quite.</span>`;
+    }
+    showExplanation();
+    nextBtn.disabled = false;
+    checked = true;
+
+    // If last question, finalize
+    if(idx === qTotal - 1){
+      bar.style.width = `100%`;
+      finalEl.hidden = false;
+      finalEl.textContent = `Final Score: ${score} / ${qTotal}`;
+      nextBtn.textContent = "Show Summary";
+    }
+  });
+
+  nextBtn.addEventListener('click', () => {
+    if(idx < qTotal - 1){
+      idx += 1;
+      renderQuestion();
+    } else {
+      // summary screen
+      qContainer.innerHTML = `
+        <div class="q-section">Quiz Complete</div>
+        <div class="q-stem">Great work! You answered ${score} out of ${qTotal} correctly.</div>
+        <ul class="small" style="margin:10px 0 0; line-height:1.6">
+          <li>Sections covered: Fluid Properties; Pressure; Hydrostatics; Hydrostatic Forces; Buoyancy; Bernoulli; Conservation of Mass; Conservation of Momentum; Conservation of Energy; Dimensional Analysis.</li>
+          <li>Equations referenced: (1)–(14). Appendix Figure A.1 (page 2) shows centroid & second moment data often used with hydrostatic forces.</li>
+        </ul>
+      `;
+      feedbackEl.textContent = "";
+      explainEl.hidden = true;
+      nextBtn.disabled = true;
+      hintBtn.disabled = true;
+      checkBtn.disabled = true;
+      bar.style.width = `100%`;
+    }
+  });
+
+  hintBtn.addEventListener('click', () => {
+    const q = QUESTIONS[idx];
+    feedbackEl.innerHTML = `<span class="small">${q.hint || "No hint for this one — you got this!"}</span>`;
+  });
+
+  restartBtn.addEventListener('click', () => {
+    idx = 0; score = 0; checked = false;
+    scoreEl.textContent = "0";
+    bar.style.width = "0%";
+    finalEl.hidden = true;
+    nextBtn.textContent = "Next ▶";
+    hintBtn.disabled = false;
+    checkBtn.disabled = false;
+    nextBtn.disabled = true;
+    renderQuestion();
+  });
+
+  // Initial render
+  renderQuestion();
+</script>
+</body>
+</html>
